@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统性能监控</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .gc-info {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .gc-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖥️ 系统性能监控</h1>
+            <p>实时监控JVM内存使用情况和垃圾回收性能</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshData()">🔄 刷新数据</button>
+            <button class="btn btn-success" onclick="toggleAutoRefresh()" id="autoRefreshBtn">▶️ 开始自动刷新</button>
+            <button class="btn btn-warning" onclick="triggerGC()">🗑️ 手动触发GC</button>
+            <a href="/" class="btn btn-primary">📊 返回导出系统</a>
+        </div>
+
+        <div class="status" id="status">
+            <span id="statusText">点击刷新数据开始监控</span>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="grid">
+            <!-- JVM内存卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">💾</span>
+                    <span class="card-title">JVM内存使用</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">已用内存</span>
+                    <span class="metric-value" id="usedMemory">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">总内存</span>
+                    <span class="metric-value" id="totalMemory">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">最大内存</span>
+                    <span class="metric-value" id="maxMemory">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">可用内存</span>
+                    <span class="metric-value" id="freeMemory">-</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="memoryProgress">
+                        <span class="progress-text" id="memoryProgressText">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 堆内存卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🏗️</span>
+                    <span class="card-title">堆内存详情</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">已用堆内存</span>
+                    <span class="metric-value" id="heapUsed">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">已提交堆内存</span>
+                    <span class="metric-value" id="heapCommitted">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">最大堆内存</span>
+                    <span class="metric-value" id="heapMax">-</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="heapProgress">
+                        <span class="progress-text" id="heapProgressText">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GC信息卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🗑️</span>
+                    <span class="card-title">垃圾回收统计</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">总GC次数</span>
+                    <span class="metric-value" id="totalGCCount">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">总GC时间</span>
+                    <span class="metric-value" id="totalGCTime">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">平均GC时间</span>
+                    <span class="metric-value" id="avgGCTime">-</span>
+                </div>
+                <div class="gc-info" id="gcDetails">
+                    <div style="font-weight: 600; margin-bottom: 10px;">GC收集器详情</div>
+                    <div id="gcCollectors">暂无数据</div>
+                </div>
+            </div>
+
+            <!-- 系统信息卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">⚙️</span>
+                    <span class="card-title">系统信息</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">CPU核心数</span>
+                    <span class="metric-value" id="cpuCores">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Java版本</span>
+                    <span class="metric-value" id="javaVersion">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">操作系统</span>
+                    <span class="metric-value" id="osInfo">-</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">JVM厂商</span>
+                    <span class="metric-value" id="javaVendor">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="timestamp" id="lastUpdate">
+            最后更新时间: 暂无数据
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let autoRefreshInterval = null;
+        let isAutoRefreshing = false;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+        });
+
+        // 刷新数据
+        async function refreshData() {
+            updateStatus('正在获取监控数据...', 'info');
+            
+            try {
+                // 并行获取内存和GC信息
+                const [memoryResponse, gcResponse, systemResponse] = await Promise.all([
+                    fetch('/api/monitor/memory'),
+                    fetch('/api/monitor/gc'),
+                    fetch('/api/monitor/system')
+                ]);
+
+                const memoryData = await memoryResponse.json();
+                const gcData = await gcResponse.json();
+                const systemData = await systemResponse.json();
+
+                if (memoryData.success) {
+                    updateMemoryInfo(memoryData);
+                }
+
+                if (gcData.success) {
+                    updateGCInfo(gcData);
+                }
+
+                if (systemData.success) {
+                    updateSystemInfo(systemData);
+                }
+
+                updateStatus('数据更新成功', 'success');
+                updateTimestamp();
+
+            } catch (error) {
+                console.error('获取监控数据失败:', error);
+                updateStatus('获取监控数据失败: ' + error.message, 'error');
+            }
+        }
+
+        // 更新内存信息
+        function updateMemoryInfo(data) {
+            const jvmMemory = data.jvmMemory;
+            const heapMemory = data.heapMemory;
+
+            // JVM内存
+            document.getElementById('usedMemory').textContent = formatBytes(jvmMemory.usedMemory);
+            document.getElementById('totalMemory').textContent = formatBytes(jvmMemory.totalMemory);
+            document.getElementById('maxMemory').textContent = formatBytes(jvmMemory.maxMemory);
+            document.getElementById('freeMemory').textContent = formatBytes(jvmMemory.freeMemory);
+            document.getElementById('cpuCores').textContent = jvmMemory.availableProcessors + ' 核';
+
+            // 内存使用率进度条
+            const memoryUsage = jvmMemory.memoryUsage;
+            updateProgressBar('memoryProgress', 'memoryProgressText', memoryUsage);
+
+            // 堆内存
+            document.getElementById('heapUsed').textContent = formatBytes(heapMemory.used);
+            document.getElementById('heapCommitted').textContent = formatBytes(heapMemory.committed);
+            document.getElementById('heapMax').textContent = formatBytes(heapMemory.max);
+
+            // 堆内存使用率进度条
+            updateProgressBar('heapProgress', 'heapProgressText', heapMemory.usage);
+
+            // 内存使用率警告
+            if (memoryUsage > 80) {
+                showAlert('内存使用率过高: ' + memoryUsage.toFixed(2) + '%', 'warning');
+            }
+        }
+
+        // 更新GC信息
+        function updateGCInfo(data) {
+            const gcInfo = data.gcInfo;
+
+            document.getElementById('totalGCCount').textContent = gcInfo.totalCollectionCount + ' 次';
+            document.getElementById('totalGCTime').textContent = gcInfo.totalCollectionTime + ' ms';
+            document.getElementById('avgGCTime').textContent = gcInfo.averageCollectionTime.toFixed(2) + ' ms';
+
+            // GC收集器详情
+            const collectorsContainer = document.getElementById('gcCollectors');
+            collectorsContainer.innerHTML = '';
+
+            Object.keys(gcInfo).forEach(key => {
+                if (key !== 'totalCollectionCount' && key !== 'totalCollectionTime' && key !== 'averageCollectionTime') {
+                    const collector = gcInfo[key];
+                    if (collector && collector.name) {
+                        const div = document.createElement('div');
+                        div.className = 'gc-item';
+                        div.innerHTML = `
+                            <span>${collector.name}</span>
+                            <span>${collector.collectionCount}次 / ${collector.collectionTime}ms</span>
+                        `;
+                        collectorsContainer.appendChild(div);
+                    }
+                }
+            });
+        }
+
+        // 更新系统信息
+        function updateSystemInfo(data) {
+            if (data.system) {
+                document.getElementById('javaVersion').textContent = data.system.javaVersion;
+                document.getElementById('javaVendor').textContent = data.system.javaVendor;
+                document.getElementById('osInfo').textContent = 
+                    data.system.osName + ' ' + data.system.osVersion + ' (' + data.system.osArch + ')';
+            }
+        }
+
+        // 更新进度条
+        function updateProgressBar(progressId, textId, percentage) {
+            const progressBar = document.getElementById(progressId);
+            const progressText = document.getElementById(textId);
+            
+            progressBar.style.width = Math.min(percentage, 100) + '%';
+            progressText.textContent = percentage.toFixed(1) + '%';
+            
+            // 根据使用率改变颜色
+            if (percentage > 80) {
+                progressBar.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
+            } else if (percentage > 60) {
+                progressBar.style.background = 'linear-gradient(45deg, #f093fb, #f5576c)';
+            } else {
+                progressBar.style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+            }
+        }
+
+        // 切换自动刷新
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('autoRefreshBtn');
+            
+            if (isAutoRefreshing) {
+                clearInterval(autoRefreshInterval);
+                btn.innerHTML = '▶️ 开始自动刷新';
+                btn.className = 'btn btn-success';
+                isAutoRefreshing = false;
+                updateStatus('自动刷新已停止', 'info');
+            } else {
+                autoRefreshInterval = setInterval(refreshData, 3000); // 每3秒刷新
+                btn.innerHTML = '⏸️ 停止自动刷新';
+                btn.className = 'btn btn-warning';
+                isAutoRefreshing = true;
+                updateStatus('自动刷新已启动 (每3秒)', 'success');
+            }
+        }
+
+        // 手动触发GC
+        async function triggerGC() {
+            updateStatus('正在触发GC...', 'info');
+            
+            try {
+                const response = await fetch('/api/monitor/gc/trigger');
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`GC执行成功！释放内存: ${formatBytes(result.freedMemory)}, 耗时: ${result.gcTime}ms`, 'success');
+                    // GC后刷新数据
+                    setTimeout(refreshData, 500);
+                } else {
+                    showAlert('GC触发失败: ' + result.error, 'error');
+                }
+                
+            } catch (error) {
+                console.error('触发GC失败:', error);
+                showAlert('触发GC失败: ' + error.message, 'error');
+            }
+        }
+
+        // 更新状态
+        function updateStatus(message, type) {
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = message;
+            
+            const status = document.getElementById('status');
+            status.className = 'status';
+            
+            switch(type) {
+                case 'success':
+                    status.style.borderLeftColor = '#28a745';
+                    break;
+                case 'error':
+                    status.style.borderLeftColor = '#dc3545';
+                    break;
+                case 'warning':
+                    status.style.borderLeftColor = '#ffc107';
+                    break;
+                default:
+                    status.style.borderLeftColor = '#007bff';
+            }
+        }
+
+        // 显示警告
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                ${message}
+                <button style="float: right; background: none; border: none; font-size: 18px; cursor: pointer;" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            alertContainer.appendChild(alert);
+            
+            // 5秒后自动消失
+            setTimeout(() => {
+                if (alert.parentElement) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // 格式化字节数
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 更新时间戳
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                '最后更新时间: ' + now.toLocaleString('zh-CN');
+        }
+
+        // 页面卸载时清理定时器
+        window.addEventListener('beforeunload', function() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.excel.mapper.ExportTaskMapper">
+
+    <!-- 导出任务结果映射 -->
+    <resultMap id="BaseResultMap" type="com.example.excel.entity.ExportTask">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="task_id" property="taskId" jdbcType="VARCHAR"/>
+        <result column="task_name" property="taskName" jdbcType="VARCHAR"/>
+        <result column="export_type" property="exportType" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="total_count" property="totalCount" jdbcType="BIGINT"/>
+        <result column="processed_count" property="processedCount" jdbcType="BIGINT"/>
+        <result column="progress" property="progress" jdbcType="DECIMAL"/>
+        <result column="file_path" property="filePath" jdbcType="VARCHAR"/>
+        <result column="file_name" property="fileName" jdbcType="VARCHAR"/>
+        <result column="file_size" property="fileSize" jdbcType="BIGINT"/>
+        <result column="error_message" property="errorMessage" jdbcType="LONGVARCHAR"/>
+        <result column="create_by" property="createBy" jdbcType="VARCHAR"/>
+        <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
+        <result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础查询字段 -->
+    <sql id="baseColumns">
+        id, task_id, task_name, export_type, status, total_count, processed_count,
+        progress, file_path, file_name, file_size, error_message, create_by,
+        start_time, end_time, create_time, update_time
+    </sql>
+
+    <!-- 根据任务ID查询任务 -->
+    <select id="selectByTaskId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="baseColumns"/>
+        FROM export_task
+        WHERE task_id = #{taskId}
+    </select>
+
+    <!-- 更新任务进度 -->
+    <update id="updateProgress">
+        UPDATE export_task
+        SET processed_count = #{processedCount},
+            progress = #{progress},
+            update_time = NOW()
+        WHERE task_id = #{taskId}
+    </update>
+
+    <!-- 更新任务状态 -->
+    <update id="updateStatus">
+        UPDATE export_task
+        SET status = #{status},
+            update_time = NOW()
+            <if test="errorMessage != null">
+                , error_message = #{errorMessage}
+            </if>
+            <if test='status == "SUCCESS" or status == "FAILED"'>
+                , end_time = NOW()
+            </if>
+        WHERE task_id = #{taskId}
+    </update>
+
+    <!-- 更新文件信息 -->
+    <update id="updateFileInfo">
+        UPDATE export_task
+        SET file_path = #{filePath},
+            file_name = #{fileName},
+            file_size = #{fileSize},
+            update_time = NOW()
+        WHERE task_id = #{taskId}
+    </update>
+
+    <!-- 查询正在处理的任务数量 -->
+    <select id="countProcessingTasks" resultType="int">
+        SELECT COUNT(1)
+        FROM export_task
+        WHERE status = 'PROCESSING'
+    </select>
+
+    <!-- 查询用户的导出任务列表 -->
+    <select id="selectUserTasks" resultMap="BaseResultMap">
+        SELECT
+        <include refid="baseColumns"/>
+        FROM export_task
+        WHERE create_by = #{createBy}
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel导出系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #4facfe;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-info:hover {
+            text-decoration: none;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(23, 162, 184, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: #212529;
+            text-decoration: none;
+        }
+
+        .btn-warning:hover {
+            text-decoration: none;
+            color: #212529;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 193, 7, 0.3);
+        }
+
+        .task-list {
+            margin-top: 20px;
+        }
+
+        .task-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.3s;
+        }
+
+        .task-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .task-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .task-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-processing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            transition: width 0.3s;
+        }
+
+        .task-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .task-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .task-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Excel导出系统</h1>
+            <p>高效处理百万级数据导出，支持异步任务和实时进度监控</p>
+        </div>
+
+        <div class="content">
+            <!-- 导出配置区域 -->
+            <div class="section">
+                <h2>🚀 导出配置</h2>
+                <form id="exportForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskName">任务名称</label>
+                            <input type="text" id="taskName" placeholder="请输入任务名称" value="用户数据导出">
+                        </div>
+                        <div class="form-group">
+                            <label for="exportType">导出类型</label>
+                            <select id="exportType">
+                                <option value="user">用户数据</option>
+                                <option value="order">订单数据</option>
+                                <option value="product">产品数据</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="username">用户名（模糊查询）</label>
+                            <input type="text" id="username" placeholder="请输入用户名">
+                        </div>
+                        <div class="form-group">
+                            <label for="department">部门</label>
+                            <select id="department">
+                                <option value="">全部部门</option>
+                                <option value="技术部">技术部</option>
+                                <option value="产品部">产品部</option>
+                                <option value="运营部">运营部</option>
+                                <option value="市场部">市场部</option>
+                                <option value="人事部">人事部</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startTime">开始时间</label>
+                            <input type="datetime-local" id="startTime">
+                        </div>
+                        <div class="form-group">
+                            <label for="endTime">结束时间</label>
+                            <input type="datetime-local" id="endTime">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="createBy">创建人</label>
+                        <input type="text" id="createBy" placeholder="请输入创建人" value="system">
+                    </div>
+
+                    <button type="submit" class="btn" id="exportBtn">
+                        <span id="exportBtnText">🚀 开始导出</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="refreshTasks()">🔄 刷新任务</button>
+            <button type="button" class="btn btn-danger" onclick="clearTasks()">🗑️ 清空任务</button>
+            <a href="/monitor.html" class="btn btn-info" target="_blank">🖥️ 性能监控</a>
+            <a href="/performance.html" class="btn btn-warning" target="_blank">📊 性能对比</a>
+                </form>
+            </div>
+
+            <!-- 任务列表区域 -->
+            <div class="section">
+                <h2>📋 任务列表</h2>
+                <div id="alertContainer"></div>
+                <div id="taskList" class="task-list">
+                    <p style="text-align: center; color: #666; padding: 40px;">暂无导出任务</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API基础URL
+        const API_BASE = '/api/export';
+        
+        // 当前任务列表
+        let currentTasks = [];
+        
+        // 轮询定时器
+        let pollTimer = null;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 绑定表单提交事件
+            document.getElementById('exportForm').addEventListener('submit', handleExport);
+            
+            // 加载任务列表
+            refreshTasks();
+            
+            // 开始轮询
+            startPolling();
+        });
+
+        // 处理导出请求
+        async function handleExport(event) {
+            event.preventDefault();
+            
+            const exportBtn = document.getElementById('exportBtn');
+            const exportBtnText = document.getElementById('exportBtnText');
+            
+            // 禁用按钮
+            exportBtn.disabled = true;
+            exportBtnText.innerHTML = '<div class="loading"></div>正在提交...';
+            
+            try {
+                // 收集表单数据
+                const formData = {
+                    taskName: document.getElementById('taskName').value || '用户数据导出',
+                    exportType: document.getElementById('exportType').value,
+                    username: document.getElementById('username').value,
+                    department: document.getElementById('department').value,
+                    startTime: document.getElementById('startTime').value,
+                    endTime: document.getElementById('endTime').value,
+                    createBy: document.getElementById('createBy').value || 'system',
+                    async: true
+                };
+                
+                // 发送导出请求
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showAlert('导出任务已提交，任务ID: ' + result.data.taskId, 'success');
+                    // 刷新任务列表
+                    refreshTasks();
+                } else {
+                    showAlert('导出失败: ' + result.message, 'error');
+                }
+                
+            } catch (error) {
+                console.error('导出请求失败:', error);
+                showAlert('导出请求失败: ' + error.message, 'error');
+            } finally {
+                // 恢复按钮状态
+                exportBtn.disabled = false;
+                exportBtnText.innerHTML = '🚀 开始导出';
+            }
+        }
+
+        // 刷新任务列表
+        async function refreshTasks() {
+            try {
+                const createBy = document.getElementById('createBy').value || 'system';
+                const response = await fetch(`${API_BASE}/tasks?createBy=${createBy}&limit=20`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    currentTasks = result.data;
+                    renderTaskList(currentTasks);
+                } else {
+                    showAlert('获取任务列表失败: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('获取任务列表失败:', error);
+                showAlert('获取任务列表失败: ' + error.message, 'error');
+            }
+        }
+
+        // 渲染任务列表
+        function renderTaskList(tasks) {
+            const taskList = document.getElementById('taskList');
+            
+            if (!tasks || tasks.length === 0) {
+                taskList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">暂无导出任务</p>';
+                return;
+            }
+            
+            const html = tasks.map(task => {
+                const statusClass = `status-${task.status.toLowerCase()}`;
+                const progress = task.progress || 0;
+                const statusText = getStatusText(task.status);
+                
+                return `
+                    <div class="task-item">
+                        <div class="task-header">
+                            <div class="task-title">${task.taskName}</div>
+                            <div class="task-status ${statusClass}">${statusText}</div>
+                        </div>
+                        
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%"></div>
+                        </div>
+                        
+                        <div class="task-info">
+                            <span>进度: ${progress.toFixed(2)}% (${task.processedCount || 0}/${task.totalCount || 0})</span>
+                            <span>创建时间: ${formatDateTime(task.createTime)}</span>
+                        </div>
+                        
+                        ${task.status === 'SUCCESS' ? `
+                            <div style="margin-top: 15px;">
+                                <button class="btn" onclick="downloadFile('${task.taskId}')">
+                                    📥 下载文件 (${formatFileSize(task.fileSize)})
+                                </button>
+                            </div>
+                        ` : ''}
+                        
+                        ${task.status === 'FAILED' && task.errorMessage ? `
+                            <div style="margin-top: 10px; color: #721c24; font-size: 14px;">
+                                错误信息: ${task.errorMessage}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            taskList.innerHTML = html;
+        }
+
+        // 下载文件
+        function downloadFile(taskId) {
+            const downloadUrl = `${API_BASE}/download/${taskId}`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = '';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 清空任务列表
+        function clearTasks() {
+            if (confirm('确定要清空任务列表吗？')) {
+                currentTasks = [];
+                renderTaskList(currentTasks);
+                showAlert('任务列表已清空', 'success');
+            }
+        }
+
+        // 开始轮询
+        function startPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+            }
+            
+            pollTimer = setInterval(() => {
+                // 只有存在处理中的任务时才轮询
+                const hasProcessingTasks = currentTasks.some(task => 
+                    task.status === 'PENDING' || task.status === 'PROCESSING'
+                );
+                
+                if (hasProcessingTasks) {
+                    refreshTasks();
+                }
+            }, 3000); // 每3秒轮询一次
+        }
+
+        // 显示提示信息
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            
+            const alertHtml = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                    <button style="float: right; background: none; border: none; font-size: 18px; cursor: pointer;" onclick="this.parentElement.remove()">×</button>
+                </div>
+            `;
+            
+            alertContainer.innerHTML = alertHtml;
+            
+            // 3秒后自动消失
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 3000);
+        }
+
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'PENDING': '等待中',
+                'PROCESSING': '处理中',
+                'SUCCESS': '已完成',
+                'FAILED': '已失败'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 格式化日期时间
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '-';
+            const date = new Date(dateTimeStr);
+            return date.toLocaleString('zh-CN');
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 页面卸载时清理定时器
+        window.addEventListener('beforeunload', function() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+            }
+        });
+    </script>
+</body>
+</html>

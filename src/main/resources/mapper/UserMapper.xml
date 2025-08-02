@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.excel.mapper.UserMapper">
+
+    <!-- 用户结果映射 -->
+    <resultMap id="BaseResultMap" type="com.example.excel.entity.User">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="real_name" property="realName" jdbcType="VARCHAR"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="age" property="age" jdbcType="INTEGER"/>
+        <result column="gender" property="gender" jdbcType="VARCHAR"/>
+        <result column="department" property="department" jdbcType="VARCHAR"/>
+        <result column="position" property="position" jdbcType="VARCHAR"/>
+        <result column="salary" property="salary" jdbcType="DECIMAL"/>
+        <result column="join_time" property="joinTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用查询条件 -->
+    <sql id="whereCondition">
+        <where>
+            <if test="params.username != null and params.username != ''">
+                AND username LIKE CONCAT('%', #{params.username}, '%')
+            </if>
+            <if test="params.department != null and params.department != ''">
+                AND department = #{params.department}
+            </if>
+            <if test="params.startTime != null">
+                AND create_time &gt;= #{params.startTime}
+            </if>
+            <if test="params.endTime != null">
+                AND create_time &lt;= #{params.endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 基础查询字段 -->
+    <sql id="baseColumns">
+        id, username, real_name, email, phone, age, gender,
+        department, position, salary, join_time, create_time, update_time
+    </sql>
+
+    <!-- 分页查询用户数据（用于导出） -->
+    <select id="selectUserPageForExport" resultMap="BaseResultMap">
+        SELECT
+        <include refid="baseColumns"/>
+        FROM user
+        <include refid="whereCondition"/>
+        ORDER BY id ASC
+    </select>
+
+    <!-- 统计符合条件的用户总数 -->
+    <select id="countUserForExport" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM user
+        <include refid="whereCondition"/>
+    </select>
+
+    <!-- 流式查询用户数据（用于大数据量导出） -->
+    <select id="selectUserListForExport" resultMap="BaseResultMap">
+        SELECT
+        <include refid="baseColumns"/>
+        FROM user
+        <include refid="whereCondition"/>
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+</mapper>
